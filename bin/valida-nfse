@@ -1,0 +1,38 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * valida-nfse - validador offline de XML de NFS-e.
+ *
+ * Uso:
+ *   valida-nfse nota.xml
+ *   valida-nfse nota.xml --json
+ *   valida-nfse --batch ./notas/
+ *   cat nota.xml | valida-nfse -
+ */
+
+$autoload = null;
+foreach ([
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php', // instalado como dependencia (vendor/bin)
+] as $candidato) {
+    if (is_file($candidato)) {
+        $autoload = $candidato;
+        break;
+    }
+}
+
+if ($autoload === null) {
+    fwrite(STDERR, "erro: autoload do Composer nao encontrado. Rode `composer install` no pacote." . PHP_EOL);
+    exit(2);
+}
+
+require $autoload;
+
+$argv = $_SERVER['argv'] ?? [];
+array_shift($argv);
+
+$app = new ChrZ\ValidaNfse\Console\Application();
+exit($app->run(array_values($argv)));

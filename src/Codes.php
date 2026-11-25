@@ -1,0 +1,142 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ChrZ\ValidaNfse;
+
+/**
+ * Catalogo de codigos de issue.
+ *
+ * Os codigos sao contrato publico: aparecem no relatorio, no JSON usado por CI
+ * e em supressoes. Nunca renomeie um codigo publicado; adicione um novo.
+ *
+ * A lista e identica a do validador de referencia em Python, para que os dois
+ * possam rodar lado a lado sem tradução de nomes.
+ */
+final class Codes
+{
+    // XML / envelope
+    public const XML_MALFORMADO = 'XML_MALFORMADO';
+    public const XML_VAZIO = 'XML_VAZIO';
+    public const XML_SEM_RAIZ = 'XML_SEM_RAIZ';
+    public const XML_ENCODING_INVALIDO = 'XML_ENCODING_INVALIDO';
+    public const XML_RAIZES_MULTIPLAS = 'XML_RAIZES_MULTIPLAS';
+    public const RAIZ_NAMESPACE_DESCONHECIDO = 'RAIZ_NAMESPACE_DESCONHECIDO';
+
+    // Envelope / InfNFe
+    public const ENVELOPE_RAIZ_INVALIDA = 'ENVELOPE_RAIZ_INVALIDA';
+    public const ENV_NFSE_AUSENTE = 'ENV_NFSE_AUSENTE';
+    public const ENV_NFSE_VAZIA = 'ENV_NFSE_VAZIA';
+    public const ENV_INFNFE_AUSENTE = 'ENV_INFNFE_AUSENTE';
+    public const ENV_INFNFE_VAZIA = 'ENV_INFNFE_VAZIA';
+    public const ENV_INFNFE_DUPLICADO = 'ENV_INFNFE_DUPLICADO';
+
+    // Ide
+    public const IDE_AUSENTE = 'IDE_AUSENTE';
+    public const IDE_VAZIO = 'IDE_VAZIO';
+    public const IDE_ORDEM_INVALIDA = 'IDE_ORDEM_INVALIDA';
+    public const IDE_CSTAT_OBRIGATORIO = 'IDE_CSTAT_OBRIGATORIO';
+    public const IDE_CSTAT_INVALIDO = 'IDE_CSTAT_INVALIDO';
+    public const IDE_NNF_OBRIGATORIO = 'IDE_NNF_OBRIGATORIO';
+    public const IDE_NNF_NAO_NUMERICO = 'IDE_NNF_NAO_NUMERICO';
+    public const IDE_NNF_NAO_POSITIVO = 'IDE_NNF_NAO_POSITIVO';
+    public const IDE_DTEMI_OBRIGATORIO = 'IDE_DTEMI_OBRIGATORIO';
+    public const IDE_DTEMI_INVALIDO = 'IDE_DTEMI_INVALIDO';
+    public const IDE_DTEMI_SEM_FUSO = 'IDE_DTEMI_SEM_FUSO';
+    public const IDE_DTEMI_FUTURO = 'IDE_DTEMI_FUTURO';
+    public const IDE_DTEMI_ANTIGO = 'IDE_DTEMI_ANTIGO';
+    public const IDE_CHAVE_ACESSO_OBRIGATORIA = 'IDE_CHAVE_ACESSO_OBRIGATORIA';
+    public const IDE_CHAVE_ACESSO_INVALIDA = 'IDE_CHAVE_ACESSO_INVALIDA';
+    public const IDE_CHAVE_ACESSO_ANO_DIVERGENTE = 'IDE_CHAVE_ACESSO_ANO_DIVERGENTE';
+    public const IDE_CMUNFG_OBRIGATORIO = 'IDE_CMUNFG_OBRIGATORIO';
+    public const IDE_CMUNFG_INVALIDO = 'IDE_CMUNFG_INVALIDO';
+    public const IDE_CMUN_INVALIDO = 'IDE_CMUN_INVALIDO';
+    public const IDE_CMUN_CMUNFG_DIVERGEM = 'IDE_CMUN_CMUNFG_DIVERGEM';
+    public const IDE_TPAMB_INVALIDO = 'IDE_TPAMB_INVALIDO';
+
+    // Emitente
+    public const EMITENTE_AUSENTE = 'EMITENTE_AUSENTE';
+    public const EMITENTE_VAZIO = 'EMITENTE_VAZIO';
+    public const EMITENTE_ORDEM_INVALIDA = 'EMITENTE_ORDEM_INVALIDA';
+    public const EMITENTE_CNPJ_OBRIGATORIO = 'EMITENTE_CNPJ_OBRIGATORIO';
+    public const EMITENTE_CNPJ_INVALIDO = 'EMITENTE_CNPJ_INVALIDO';
+    public const EMITENTE_CNPJ_E_CPF = 'EMITENTE_CNPJ_E_CPF';
+    public const EMITENTE_CPF_OBRIGATORIO = 'EMITENTE_CPF_OBRIGATORIO';
+    public const EMITENTE_CPF_INVALIDO = 'EMITENTE_CPF_INVALIDO';
+    public const EMITENTE_RAZAO_SOCIAL_OBRIGATORIA = 'EMITENTE_RAZAO_SOCIAL_OBRIGATORIA';
+    public const EMITENTE_NOME_OBRIGATORIO = 'EMITENTE_NOME_OBRIGATORIO';
+    public const EMITENTE_UF_INVALIDA = 'EMITENTE_UF_INVALIDA';
+    public const ENDERECO_CEP_INVALIDO = 'ENDERECO_CEP_INVALIDO';
+    public const ENDERECO_TEL_INVALIDO = 'ENDERECO_TEL_INVALIDO';
+
+    // Destinatario
+    public const DESTINATARIO_AUSENTE = 'DESTINATARIO_AUSENTE';
+    public const DESTINATARIO_VAZIO = 'DESTINATARIO_VAZIO';
+    public const DESTINATARIO_ORDEM_INVALIDA = 'DESTINATARIO_ORDEM_INVALIDA';
+    public const DESTINATARIO_CPF_INVALIDO = 'DESTINATARIO_CPF_INVALIDO';
+    public const DESTINATARIO_CNPJ_INVALIDO = 'DESTINATARIO_CNPJ_INVALIDO';
+    public const DESTINATARIO_CPF_E_CNPJ = 'DESTINATARIO_CPF_E_CNPJ';
+    public const DESTINATARIO_SEM_DOCUMENTO = 'DESTINATARIO_SEM_DOCUMENTO';
+
+    // Servico
+    public const SERVICO_AUSENTE = 'SERVICO_AUSENTE';
+    public const SERVICO_VAZIO = 'SERVICO_VAZIO';
+    public const LISTA_SERVICO_AUSENTE = 'LISTA_SERVICO_AUSENTE';
+    public const LISTA_SERVICO_VAZIA = 'LISTA_SERVICO_VAZIA';
+    public const LISTA_SERVICO_CODIGO_MUN_DIVERGENTE = 'LISTA_SERVICO_CODIGO_MUN_DIVERGENTE';
+    public const ITEM_SERVICO_ORDEM_INVALIDA = 'ITEM_SERVICO_ORDEM_INVALIDA';
+    public const ITEM_SERVICO_SEM_CODIGO = 'ITEM_SERVICO_SEM_CODIGO';
+    public const ITEM_SERVICO_CODIGO_INVALIDO = 'ITEM_SERVICO_CODIGO_INVALIDO';
+    public const ITEM_SERVICO_SEM_VALOR = 'ITEM_SERVICO_SEM_VALOR';
+    public const ITEM_SERVICO_SEM_BC = 'ITEM_SERVICO_SEM_BC';
+    public const ITEM_SERVICO_ALIQUOTA_INVALIDA = 'ITEM_SERVICO_ALIQUOTA_INVALIDA';
+    public const ITEM_SERVICO_ALIQUOTA_DIVERGENTE = 'ITEM_SERVICO_ALIQUOTA_DIVERGENTE';
+    public const ITEM_SERVICO_ISS_RETIDO_INVALIDO = 'ITEM_SERVICO_ISS_RETIDO_INVALIDO';
+
+    // Totais
+    public const TOTAL_AUSENTE = 'TOTAL_AUSENTE';
+    public const TOTAL_VAZIO = 'TOTAL_VAZIO';
+    public const TOTAL_ORDEM_INVALIDA = 'TOTAL_ORDEM_INVALIDA';
+    public const TOTAL_ISS_TRIBUTARIO_AUSENTE = 'TOTAL_ISS_TRIBUTARIO_AUSENTE';
+    public const TOTAL_ISS_RECOLHIDO_AUSENTE = 'TOTAL_ISS_RECOLHIDO_AUSENTE';
+    public const TOTAL_DECIMAL_INVALIDO = 'TOTAL_DECIMAL_INVALIDO';
+    public const TOTAL_SEM_ITENS = 'TOTAL_SEM_ITENS';
+    public const TOTAL_SEM_ITENS_NAO_ZERO = 'TOTAL_SEM_ITENS_NAO_ZERO';
+    public const TOTAL_ISS_RECOLHIDO_DIVERGENTE = 'TOTAL_ISS_RECOLHIDO_DIVERGENTE';
+
+    // Aritmetica
+    public const VALOR_NAO_NUMERICO = 'VALOR_NAO_NUMERICO';
+    public const VALOR_NEGATIVO = 'VALOR_NEGATIVO';
+    public const SOMA_VSERVICO_DIVERGENTE = 'SOMA_VSERVICO_DIVERGENTE';
+    public const SOMA_VBC_DIVERGENTE = 'SOMA_VBC_DIVERGENTE';
+    public const SOMA_VISS_DIVERGENTE = 'SOMA_VISS_DIVERGENTE';
+    public const SOMA_VTOTTRIB_DIVERGENTE = 'SOMA_VTOTTRIB_DIVERGENTE';
+    public const LIQUIDO_NAO_CONFERE = 'LIQUIDO_NAO_CONFERE';
+
+    // Assinatura (estrutura, nao criptografia)
+    public const INFNFESIG_AUSENTE = 'INFNFESIG_AUSENTE';
+    public const INFNFESIG_VAZIA = 'INFNFESIG_VAZIA';
+    public const ASSINATURA_AUSENTE = 'ASSINATURA_AUSENTE';
+    public const ASSINATURA_VAZIA = 'ASSINATURA_VAZIA';
+    public const ASSINATURA_REFERENCE_AUSENTE = 'ASSINATURA_REFERENCE_AUSENTE';
+    public const ASSINATURA_REFERENCE_VAZIA = 'ASSINATURA_REFERENCE_VAZIA';
+    public const ASSINATURA_SIGNATUREVALUE_AUSENTE = 'ASSINATURA_SIGNATUREVALUE_AUSENTE';
+    public const ASSINATURA_SIGNATUREVALUE_VAZIA = 'ASSINATURA_SIGNATUREVALUE_VAZIA';
+    public const ASSINATURA_URI_INVALIDA = 'ASSINATURA_URI_INVALIDA';
+    public const ASSINATURA_FORA_DE_INFNFE = 'ASSINATURA_FORA_DE_INFNFE';
+
+    /**
+     * Todos os codigos declarados.
+     *
+     * @return list<string>
+     */
+    public static function all(): array
+    {
+        static $all = null;
+        if ($all === null) {
+            $all = array_values((new \ReflectionClass(self::class))->getConstants());
+        }
+
+        return $all;
+    }
+}

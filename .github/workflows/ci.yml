@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: xml, mbstring, json
+          coverage: none
+
+      - name: Validar composer.json
+        run: composer validate --strict --no-check-publish
+
+      - name: Instalar dependências
+        run: composer install --prefer-dist --no-progress
+
+      - name: PHPStan
+        run: composer analyse
+
+      - name: PHPUnit
+        run: composer test
+
+      - name: Smoke test da CLI
+        run: |
+          set -e
+          printf '%s' '<?xml version="1.0"?><NFSe xmlns="http://www.abrasf.org.br/nfse.xsd"></NFSe>' > /tmp/nota.xml
+          php bin/valida-nfse /tmp/nota.xml --json > /tmp/out.json || true
+          php -r '$d = json_decode(file_get_contents("/tmp/out.json"), true); if (!is_array($d) || !isset($d["issues"][0])) { fwrite(STDERR, "JSON inesperado\n"); exit(1); } echo "code: ", $d["issues"][0]["code"], PHP_EOL;'
+          grep -q 'ENV_NFSE_VAZIA' /tmp/out.json
+
+  conformidade:
+    name: Conformidade com a referência (Python)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: xml, mbstring, json
+          coverage: none
+
+      - name: Instalar dependências
+        run: composer install --prefer-dist --no-progress
+
+      - name: Baixar o validador de referência
+        run: git clone --depth 1 https://github.com/chr-z/nfse-validator.git ../nfse-validator
+
+      - name: Rodar o harness de conformidade
+        run: python3 tools/conformance.py --ref ../nfse-validator --fuzz 220
