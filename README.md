@@ -25,18 +25,7 @@ antes de transmitir: **este XML está correto?**
 composer require chr-z/valida-nfse
 ```
 
-Enquanto o pacote não estiver indexado no Packagist, use o repositório direto:
-
-```json
-{
-    "repositories": [
-        { "type": "vcs", "url": "https://github.com/chr-z/valida-nfse-php" }
-    ],
-    "require": {
-        "chr-z/valida-nfse": "^1.0"
-    }
-}
-```
+O pacote está em https://packagist.org/packages/chr-z/valida-nfse.
 
 Requisitos: PHP 8.1+ com `ext-xml` (a extensão expat, habilitada por padrão na maioria das
 distribuições) e `ext-json`. Nenhuma outra dependência.
