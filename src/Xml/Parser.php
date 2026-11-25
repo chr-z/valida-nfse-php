@@ -249,13 +249,10 @@ RE;
         // so tem declaracao/comentario (XML_SEM_RAIZ) ou documento cuja
         // declaracao/primeiro token esta quebrado (XML_MALFORMADO). Quem
         // separa e o erro do parser.
-        $codigoErro = xml_get_error_code($parser);
-        $textoErro = xml_error_string($codigoErro) ?? '';
-        $familiaSemRaiz = str_contains($textoErro, 'no element found')
-            || str_contains($textoErro, 'Invalid document end')
-            || $codigoErro === XML_ERROR_NO_ELEMENTS;
-
-        if (!$scan->temRaiz && !$familiaSemRaiz) {
+        // Documento que so tem declaracao/comentario: sem raiz, e nao ha o que
+        // interpretar. Isso vale em qualquer versao do expat - melhor que
+        // depender do texto do erro, que muda de versao para versao.
+        if (!$scan->temRaiz && !$scan->soMisc) {
             return self::issueMalformado($data, $parser);
         }
 

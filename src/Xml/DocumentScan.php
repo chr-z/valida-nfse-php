@@ -23,6 +23,8 @@ final class DocumentScan
         public readonly ?int $raizInicio = null,
         public readonly ?int $raizFim = null,
         public readonly ?int $extraEm = null,
+        /** True quando, fora declaracao/comentarios/PI, nao sobra nada. */
+        public readonly bool $soMisc = false,
     ) {
     }
 
@@ -30,7 +32,13 @@ final class DocumentScan
     {
         $len = \strlen($data);
         $i = self::pularMisc($data, 0);
-        if ($i >= $len || $data[$i] !== '<') {
+
+        // Nada alem de declaracao/comentario/PI: o documento nao tem raiz.
+        if ($i >= $len) {
+            return new self(false, null, null, null, true);
+        }
+
+        if ($data[$i] !== '<') {
             return new self(false);
         }
 
