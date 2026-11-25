@@ -226,8 +226,8 @@ RE;
         $bruto = xml_error_string($codigo);
         $msg = $bruto === null || $bruto === '' ? 'erro desconhecido do parser' : $bruto;
 
-        // Encoding errado e diagnostico inequivoco e vem antes de qualquer
-        // inferencia estrutural: sem saber ler o texto, o resto e chute.
+        // 1. Encoding errado e diagnostico inequivoco e vem antes de qualquer
+        //    inferencia estrutural: sem saber ler o texto, o resto e chute.
         if ($codigo === XML_ERROR_UNKNOWN_ENCODING
             || $codigo === XML_ERROR_INCORRECT_ENCODING
             || (\defined('XML_ERROR_UNSUPPORTED_ENCODING') && $codigo === XML_ERROR_UNSUPPORTED_ENCODING)
@@ -245,35 +245,36 @@ RE;
 
         $scan = DocumentScan::analisar($data);
 
-        // Sem raiz pode significar duas coisas bem diferentes: documento que
-        // so tem declaracao/comentario (XML_SEM_RAIZ) ou documento cuja
-        // declaracao/primeiro token esta quebrado (XML_MALFORMADO). Quem
-        // separa e o erro do parser.
-        // Documento que so tem declaracao/comentario: sem raiz, e nao ha o que
-        // interpretar. Isso vale em qualquer versao do expat - melhor que
-        // depender do texto do erro, que muda de versao para versao.
-        if (!$scan->temRaiz && !$scan->soMisc) {
+        // 2. Sem raiz. Documento que so tem declaracao/comentario/PI nao tem o
+        //    que interpretar; qualquer outro lixo inicial e mala formacao.
+        if (!$scan->temRaiz) {
+            if (!$scan->soMisc) {
+                return self::issueMalformado($data, $parser);
+            }
+
+            return self::issueSemRaiz($data, \strlen($data));
+        }
+
+        // 3. Raiz que nunca fecha: ou o arquivo foi truncado, ou tem tag
+        //    trocada. A diferenca e objetiva - truncamento nao tem tag de
+        //    fechamento sobrando, e o parser nao acusa "mismatch".
+        if ($scan->raizFim === null) {
+            // Truncamento: o parser consumiu tudo e parou no fim do arquivo.
+            // Erro no meio do documento e mala formacao (tag trocada, token
+            // invalido) e continua sendo XML_MALFORMADO.
+            $byte = xml_get_current_byte_index($parser);
+            $parouNoFim = $byte >= \strlen($data) - 1;
+
+            if ($parouNoFim && !self::terminaDentroDeTag($data)) {
+                return self::issueSemRaiz($data, \strlen($data));
+            }
+
             return self::issueMalformado($data, $parser);
         }
 
-        if (!$scan->temRaiz) {
-            [$linha, $coluna] = DocumentScan::posicao($data, \strlen($data));
-
-            return new Issue(
-                code: Codes::XML_SEM_RAIZ,
-                severity: Issue::SEVERITY_ERROR,
-                message: 'Nenhum elemento raiz encontrado no documento.',
-                path: '',
-                line: $linha,
-                column: $coluna,
-                hint: 'Todo XML precisa de exatamente um elemento raiz. O documento tem apenas declaracoes ou comentarios.',
-            );
-        }
-
-        if ($scan->extraEm !== null && $scan->raizFim !== null) {
-            // Antes de afirmar "duas raizes", confirme que a parte ate o fim da
-            // primeira raiz e um documento valido. Se ela mesma estiver
-            // quebrada, o problema e de mala formacao, nao de raiz duplicada.
+        // 4. Duas raizes: confirme que o trecho ate o fim da primeira raiz e um
+        //    documento valido antes de acusar duplicidade.
+        if ($scan->extraEm !== null) {
             $prefixo = substr($data, 0, $scan->raizFim);
             $teste = xml_parser_create();
             xml_parser_set_option($teste, XML_OPTION_CASE_FOLDING, 0);
@@ -296,9 +297,48 @@ RE;
             );
         }
 
-        // O expat do PHP aponta para dentro do token que falhou; o de Python
-        // aponta para o '<' que inicia esse token. Recuamos ate o '<' para que
-        // os dois relatorios mostrem a mesma coluna.
+        return self::issueMalformado($data, $parser);
+    }
+
+    /**
+     * Documento que termina com um '<' sem '>' correspondente.
+     */
+    private static function terminaDentroDeTag(string $data): bool
+    {
+        $ultimaAbertura = strrpos($data, '<');
+        $ultimoFechamento = strrpos($data, '>');
+
+        return $ultimaAbertura !== false
+            && ($ultimoFechamento === false || $ultimaAbertura > $ultimoFechamento);
+    }
+
+    private static function issueSemRaiz(string $data, int $offset): Issue
+    {
+        [$linha, $coluna] = DocumentScan::posicao($data, $offset);
+
+        return new Issue(
+            code: Codes::XML_SEM_RAIZ,
+            severity: Issue::SEVERITY_ERROR,
+            message: 'Nenhum elemento raiz encontrado no documento.',
+            path: '',
+            line: $linha,
+            column: $coluna,
+            hint: 'Todo XML precisa de exatamente um elemento raiz. O documento tem apenas declaracoes ou comentarios.',
+        );
+    }
+
+    /**
+     * Issue de XML malformado a partir do estado atual do parser.
+     */
+    private static function issueMalformado(string $data, \XMLParser $parser): Issue
+    {
+        $codigo = xml_get_error_code($parser);
+        $bruto = xml_error_string($codigo);
+        $msg = $bruto === null || $bruto === '' ? 'erro desconhecido do parser' : $bruto;
+
+        // O expat aponta para dentro do token que falhou. Recuamos ate o '<'
+        // que inicia esse token para a coluna ser util (e para ficar igual ao
+        // validador de referencia, que aponta para o inicio do token).
         $byte = xml_get_current_byte_index($parser);
         $byte = $byte > 0 ? min($byte, \strlen($data)) : 0;
         $antes = substr($data, 0, $byte);
@@ -312,66 +352,6 @@ RE;
         }
 
         [$linha, $coluna] = DocumentScan::posicao($data, $offset);
-
-        // Documento que termina antes de fechar a raiz: o expat chama isso de
-        // "no element found" (Python) ou "Invalid document end" (PHP). A
-        // diferenca que importa: se a ultima coisa no arquivo e um '<' sem
-        // '>', o token ficou pela metade e o erro e de mala formacao, nao de
-        // ausencia de raiz.
-        if ($codigo === XML_ERROR_NO_ELEMENTS
-            || str_contains($msg, 'no element found')
-            || str_contains($msg, 'Invalid document end')) {
-            $ultimaAbertura = strrpos($data, '<');
-            $ultimoFechamento = strrpos($data, '>');
-            $tagIncompleta = $ultimaAbertura !== false
-                && ($ultimoFechamento === false || $ultimaAbertura > $ultimoFechamento);
-
-            if ($tagIncompleta) {
-                return new Issue(
-                    code: Codes::XML_MALFORMADO,
-                    severity: Issue::SEVERITY_ERROR,
-                    message: 'XML malformado: unclosed token.',
-                    path: '',
-                    line: $linha,
-                    column: $coluna,
-                    hint: 'Ha uma tag aberta que nao foi fechada. Confira o aninhamento de <InfNFe>, <Ide> e <Total>.',
-                );
-            }
-
-            return new Issue(
-                code: Codes::XML_SEM_RAIZ,
-                severity: Issue::SEVERITY_ERROR,
-                message: 'Nenhum elemento raiz encontrado no documento.',
-                path: '',
-                line: $linha,
-                column: $coluna,
-                hint: 'Todo XML precisa de exatamente um elemento raiz. O documento tem apenas declaracoes ou comentarios.',
-            );
-        }
-
-        return new Issue(
-            code: Codes::XML_MALFORMADO,
-            severity: Issue::SEVERITY_ERROR,
-            message: \sprintf('XML malformado: %s.', $msg),
-            path: '',
-            line: $linha,
-            column: $coluna,
-            hint: self::hintMalformado($msg),
-        );
-    }
-
-    /**
-     * Issue de XML malformado a partir do estado atual do parser.
-     */
-    private static function issueMalformado(string $data, \XMLParser $parser): Issue
-    {
-        $codigo = xml_get_error_code($parser);
-        $bruto = xml_error_string($codigo);
-        $msg = $bruto === null || $bruto === '' ? 'erro desconhecido do parser' : $bruto;
-
-        $byte = xml_get_current_byte_index($parser);
-        $byte = $byte > 0 ? min($byte, \strlen($data)) : 0;
-        [$linha, $coluna] = DocumentScan::posicao($data, $byte);
 
         return new Issue(
             code: Codes::XML_MALFORMADO,

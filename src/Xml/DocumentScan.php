@@ -13,8 +13,8 @@ namespace ChrZ\ValidaNfse\Xml;
  * `<?xml`). Se o validador dependesse so do texto do erro, o mesmo arquivo
  * daria codigos diferentes em PHP e em Python.
  *
- * Aqui a pergunta e respondida pelo documento em si: existe elemento raiz? O
- * que sobra depois dele? Isso e estavel em qualquer versao.
+ * Aqui a pergunta e respondida pelo documento em si: existe elemento raiz? Ele
+ * fecha? O que sobra depois dele? Isso e estavel em qualquer versao.
  */
 final class DocumentScan
 {
@@ -32,6 +32,12 @@ final class DocumentScan
     {
         $len = \strlen($data);
         $i = self::pularMisc($data, 0);
+
+        // Construcao de cabecalho nao terminada (declaracao sem fechamento):
+        // ha conteudo, mas ilegivel. Nao e "sem raiz".
+        if ($i < 0) {
+            return new self(false);
+        }
 
         // Nada alem de declaracao/comentario/PI: o documento nao tem raiz.
         if ($i >= $len) {
@@ -55,6 +61,7 @@ final class DocumentScan
         while ($depois < $len && \in_array($data[$depois], [' ', "\t", "\r", "\n"], true)) {
             ++$depois;
         }
+
         $extra = $depois < $len ? $depois : null;
 
         return new self(true, $i, $fim, $extra);
@@ -78,7 +85,8 @@ final class DocumentScan
 
     /**
      * Avanca por espaco em branco, comentarios, processing instructions e
-     * doctype. Devolve o offset do proximo conteudo relevante.
+     * doctype. Devolve o offset do proximo conteudo relevante, ou -1 quando
+     * uma dessas construcoes comeca e nao termina.
      */
     private static function pularMisc(string $data, int $i): int
     {
@@ -94,25 +102,37 @@ final class DocumentScan
 
             if (substr($data, $i, 4) === '<!--') {
                 $fim = strpos($data, '-->', $i + 4);
-                $i = $fim === false ? $len : $fim + 3;
+                if ($fim === false) {
+                    return -1;
+                }
+                $i = $fim + 3;
                 continue;
             }
 
             if (substr($data, $i, 2) === '<?') {
                 $fim = strpos($data, '?>', $i + 2);
-                $i = $fim === false ? $len : $fim + 2;
+                if ($fim === false) {
+                    return -1;
+                }
+                $i = $fim + 2;
                 continue;
             }
 
             if (substr($data, $i, 9) === '<![CDATA[') {
                 $fim = strpos($data, ']]>', $i + 9);
-                $i = $fim === false ? $len : $fim + 3;
+                if ($fim === false) {
+                    return -1;
+                }
+                $i = $fim + 3;
                 continue;
             }
 
             if (substr($data, $i, 2) === '<!') {
                 $fim = self::fimDaTag($data, $i);
-                $i = $fim === null ? $len : $fim + 1;
+                if ($fim === null) {
+                    return -1;
+                }
+                $i = $fim + 1;
                 continue;
             }
 
@@ -211,7 +231,7 @@ final class DocumentScan
                 if ($ch === $aspas) {
                     $aspas = null;
                 }
-            } elseif ($ch === '"' || $ch === "'") {
+            } elseif ($ch === chr(34) || $ch === chr(39)) {
                 $aspas = $ch;
             } elseif ($ch === '>') {
                 return $i;
